@@ -3,7 +3,8 @@ import formulaic
 import numpy as np
 import numpy.linalg as npl
 import pandas as pd
-from .util import LOG_2PI
+
+from linearlab.util import LOG_2PI
 
 class LM:
     def __init__(self, y: pd.Series, X: pd.DataFrame) -> None:
@@ -15,7 +16,7 @@ class LM:
         y, X = formulaic.model_matrix(form, data)
         return LM(y.squeeze(), X)
 
-    def fit(self) -> "LMResults":
+    def fit(self) -> "LMFit":
         n = self.y.size
         y = self.y.to_numpy(np.float_)
         X = self.X.to_numpy(np.float_)
@@ -24,7 +25,7 @@ class LM:
         rss = np.sum((y - y_hat)**2)
         sigma2 = rss / n
         loglik = -0.5 * n * (LOG_2PI + np.log(sigma2) + 1)
-        return LMResults(
+        return LMFit(
             model = self,
             loglik = loglik,
             beta = pd.Series(beta, index=self.X.columns),
@@ -35,7 +36,7 @@ class LM:
 lm = LM.from_formula
 
 @dataclass
-class LMResults:
+class LMFit:
     model: LM
     loglik: float
     beta: pd.Series

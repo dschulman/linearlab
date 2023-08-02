@@ -1,1 +1,1 @@
-from .lm import LM, LMResults, lm
+from .model.lm import LM, LMFit, lm
