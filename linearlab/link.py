@@ -32,3 +32,38 @@ class ProbitLink(Link):
         return y, dy
 
 probit = ProbitLink()
+
+class CauchitLink(Link):
+    def inv(
+        self, 
+        eta: npt.NDArray[np.float64]
+    ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+        y = stats.cauchy.cdf(eta)
+        dy = stats.cauchy.pdf(eta)
+        return y, dy
+
+cauchit = CauchitLink()
+
+class LogLogLink(Link):
+    def inv(
+        self,
+        eta: npt.NDArray[np.float64]
+    ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+        z = np.exp(-eta)
+        y = np.exp(-z)
+        dy = z * y
+        return y, dy
+
+loglog = LogLogLink()
+
+class CLogLogLink(Link):
+    def inv(
+        self,
+        eta: npt.NDArray[np.float64]
+    ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+        z = np.exp(eta)
+        y = -special.expm1(-z)
+        dy = z * (1 - y)
+        return y, dy
+
+cloglog = CLogLogLink()
