@@ -11,6 +11,25 @@ class Link(ABC):
     ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         raise NotImplementedError()
 
+class IdentityLink(Link):
+    def inv(
+        self, 
+        eta: npt.NDArray[np.float64]
+    ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+        return eta, np.ones_like(eta)
+
+identity = IdentityLink()
+
+class LogLink(Link):
+    def inv(
+        self, 
+        eta: npt.NDArray[np.float64]
+    ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+        y = np.exp(eta)
+        return y, y
+
+log = LogLink()
+
 class LogitLink(Link):
     def inv(
         self, 
