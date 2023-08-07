@@ -3,10 +3,13 @@ import numpy as np
 import numpy.typing as npt
 
 class Likelihood(ABC):
-    @property
     @abstractmethod
-    def nparam(self) -> int:
+    def params(self) -> list[str]:
         raise NotImplementedError()
+
+    @property
+    def nparam(self) -> int:
+        return len(self.params())
 
     @abstractmethod
     def __call__(
