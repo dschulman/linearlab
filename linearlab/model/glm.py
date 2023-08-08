@@ -6,7 +6,7 @@ import numpy.typing as npt
 import pandas as pd
 
 from linearlab import optim
-from linearlab.likelihood.base import Likelihood
+from linearlab.lik import Likelihood
 
 class GLM:
     def __init__(

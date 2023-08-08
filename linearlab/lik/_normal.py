@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.typing as npt
 
-from linearlab.likelihood.base import Likelihood
+from linearlab.lik.base import Likelihood
 from linearlab.link import Link, identity, log
 from linearlab.util import LOG_2PI
 

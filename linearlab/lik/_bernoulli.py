@@ -2,7 +2,7 @@ import numpy as np
 import numpy.typing as npt
 from scipy import special
 
-from linearlab.likelihood.base import Likelihood
+from linearlab.lik.base import Likelihood
 from linearlab.link import Link, LogitLink, logit
 
 class Bernoulli(Likelihood):
