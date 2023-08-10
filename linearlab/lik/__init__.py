@@ -1,3 +1,3 @@
 from .base import Likelihood
-from ._bernoulli import bernoulli
+from ._binomial import binomial
 from ._normal import normal

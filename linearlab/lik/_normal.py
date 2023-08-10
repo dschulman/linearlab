@@ -1,17 +1,25 @@
 import numpy as np
 import numpy.typing as npt
+import pandas as pd
+from typing import Any
 
 from linearlab.lik.base import Likelihood
 from linearlab.link import Link, identity, LogLink, log
 from linearlab.util import LOG_2PI
 
-class Normal(Likelihood):
+class _NormalBase(Likelihood):
+    def params(self) -> list[str]:
+        return ["mu", "sigma"]
+
+    def prepare_y(self, y: pd.Series | pd.DataFrame) -> tuple[Any, float]:
+        if not isinstance(y, pd.Series):
+            raise ValueError("normal likelihood only supports univariate y")
+        return y.to_numpy(dtype=np.float_), -0.5 * LOG_2PI * y.shape[0]
+
+class Normal(_NormalBase):
     def __init__(self, mu_link: Link, sigma_link: Link) -> None:
         self.mu_link = mu_link
         self.sigma_link = sigma_link
-
-    def params(self) -> list[str]:
-        return ["mu", "sigma"]
 
     def __call__(
         self, 
@@ -21,7 +29,7 @@ class Normal(Likelihood):
         mu, dmu = self.mu_link.inv(eta[0])
         sigma, dsigma = self.sigma_link.inv(eta[1])
         z = (y - mu) / sigma
-        f = -0.5 * np.sum(LOG_2PI + 2*np.log(sigma) + z**2)
+        f = -0.5 * np.sum(2*np.log(sigma) + z**2)
         gmu = dmu * z / sigma
         gsigma = dsigma * (z**2 - 1) / sigma
         g = np.stack([gmu, gsigma])
@@ -31,12 +39,9 @@ class Normal(Likelihood):
         h = np.stack([[hmu, hmu_sigma], [hmu_sigma, hsigma]])
         return f, g, h
 
-class NormalLogScale(Likelihood):
+class NormalLogScale(_NormalBase):
     def __init__(self, mu_link: Link) -> None:
         self.mu_link = mu_link
-
-    def params(self) -> list[str]:
-        return ["mu", "sigma"]
 
     def __call__(
         self, 
@@ -47,7 +52,7 @@ class NormalLogScale(Likelihood):
         log_sigma = eta[1]
         sigma = np.exp(log_sigma)
         z = (y - mu) / sigma
-        f = -0.5 * np.sum(LOG_2PI + 2*log_sigma + z**2)
+        f = -0.5 * np.sum(2*log_sigma + z**2)
         gmu = dmu * z / sigma
         gsigma = (z**2 - 1) / sigma
         g = np.stack([gmu, gsigma])

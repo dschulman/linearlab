@@ -28,7 +28,7 @@ class GLM:
     
     def fit(self, tol: float = 1e-8, max_iter: int = 1000) -> "GLMFit":
         d = self.lik.nparam
-        y = self.y.to_numpy()
+        y, logZ = self.lik.prepare_y(self.y)
         X = [Xi.to_numpy() for Xi in self.X]
         p = np.array([Xi.shape[1] for Xi in X])
         beta_splits = np.cumsum(p)[:-1]
@@ -44,12 +44,12 @@ class GLM:
                     H[i,j] = X[i].T @ (h[i,j][:,np.newaxis] * X[j])
             return f, np.concatenate(G), np.block(H.tolist())
         beta0 = np.zeros(p.sum())
-        loglik, beta = optim.newton_maxlik(_fgh, beta0, tol=tol, max_iter=max_iter) 
+        f, beta = optim.newton_maxlik(_fgh, beta0, tol=tol, max_iter=max_iter) 
         betas = {
             param: pd.Series(b, index=Xi.columns)
             for param, b, Xi in zip(self.lik.params(), np.split(beta, beta_splits), self.X)
         }
-        return GLMFit(self, loglik, betas)
+        return GLMFit(self, f + logZ, betas)
 
 glm = GLM.from_formula
 
