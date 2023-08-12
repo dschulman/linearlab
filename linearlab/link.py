@@ -30,6 +30,17 @@ class LogLink(Link):
 
 log = LogLink()
 
+class SoftPlusInvLink(Link):
+    def inv(
+        self,
+        eta: npt.NDArray[np.float64]
+    ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+        y = np.logaddexp(0, eta)
+        dy = special.expit(eta)
+        return y, dy
+
+softplusinv = SoftPlusInvLink()
+
 class LogitLink(Link):
     def inv(
         self, 
