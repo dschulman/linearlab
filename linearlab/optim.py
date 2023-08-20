@@ -25,4 +25,4 @@ def newton_maxlik(
             step = 1.0
         else:
             step = 0.5 * step
-    return f, theta
+    return theta, f, g, h

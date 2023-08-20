@@ -33,6 +33,9 @@ class Poisson(_PoissonBase):
         h = (dmu**2) / mu
         return f, g[np.newaxis,:], h[np.newaxis,np.newaxis,:]
 
+    def __repr__(self) -> str:
+        return f"poisson likelihood ({self.link})"
+
 class PoissonLog(_PoissonBase):
     def __call__(
         self, 
@@ -45,6 +48,9 @@ class PoissonLog(_PoissonBase):
         g = y - mu
         h = mu
         return f, g[np.newaxis,:], h[np.newaxis,np.newaxis,:]
+
+    def __repr__(self) -> str:
+        return "poisson likelihood (log link)"
 
 def poisson(link: Link = log) -> Likelihood:
     if isinstance(link, LogLink):

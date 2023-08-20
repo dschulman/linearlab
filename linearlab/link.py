@@ -28,6 +28,9 @@ class LogLink(Link):
         y = np.exp(eta)
         return y, y
 
+    def __repr__(self) -> str:
+        return "log link"
+
 log = LogLink()
 
 class SoftPlusInvLink(Link):
@@ -38,6 +41,9 @@ class SoftPlusInvLink(Link):
         y = np.logaddexp(0, eta)
         dy = special.expit(eta)
         return y, dy
+
+    def __repr__(self) -> str:
+        return "softplus inverse link"
 
 softplusinv = SoftPlusInvLink()
 
@@ -50,6 +56,9 @@ class LogitLink(Link):
         dy = y * (1 - y)
         return y, dy
 
+    def __repr__(self) -> str:
+        return "logit link"
+
 logit = LogitLink()
 
 class ProbitLink(Link):
@@ -61,6 +70,9 @@ class ProbitLink(Link):
         dy = stats.norm.pdf(eta)
         return y, dy
 
+    def __repr__(self) -> str:
+        return "probit link"
+
 probit = ProbitLink()
 
 class CauchitLink(Link):
@@ -71,6 +83,9 @@ class CauchitLink(Link):
         y = stats.cauchy.cdf(eta)
         dy = stats.cauchy.pdf(eta)
         return y, dy
+
+    def __repr__(self) -> str:
+        return "cauchit link"
 
 cauchit = CauchitLink()
 
@@ -84,6 +99,9 @@ class LogLogLink(Link):
         dy = z * y
         return y, dy
 
+    def __repr__(self) -> str:
+        return "log-log link"
+
 loglog = LogLogLink()
 
 class CLogLogLink(Link):
@@ -95,5 +113,8 @@ class CLogLogLink(Link):
         y = -special.expm1(-z)
         dy = z * (1 - y)
         return y, dy
+
+    def __repr__(self) -> str:
+        return "complementary log-log link"
 
 cloglog = CLogLogLink()

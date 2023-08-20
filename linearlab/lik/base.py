@@ -21,7 +21,7 @@ class Likelihood(ABC):
     def __call__(
         self, 
         y: Any,
-        eta: npt.NDArray[np.float64]
+        eta: npt.NDArray[np.float64],
+        observed_info: bool = False
     ) -> tuple[float, npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         raise NotImplementedError()
- 

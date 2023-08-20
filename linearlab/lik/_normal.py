@@ -39,6 +39,9 @@ class Normal(_NormalBase):
         h = np.stack([[hmu, hmu_sigma], [hmu_sigma, hsigma]])
         return f, g, h
 
+    def __repr__(self) -> str:
+        return f"normal likelihood with mean ({self.mu_link}) and scale ({self.sigma_link})"
+
 class NormalLogScale(_NormalBase):
     def __init__(self, mu_link: Link) -> None:
         self.mu_link = mu_link
@@ -61,6 +64,9 @@ class NormalLogScale(_NormalBase):
         hmu_sigma = np.zeros(y.shape[0])
         h = np.stack([[hmu, hmu_sigma], [hmu_sigma, hsigma]])
         return f, g, h  
+
+    def __repr__(self) -> str:
+        return f"normal likelihood with mean ({self.mu_link}) and scale (log link)"
 
 def normal(mu_link: Link = identity, sigma_link: Link = log) -> Likelihood:
     if isinstance(sigma_link, LogLink):

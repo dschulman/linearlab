@@ -46,6 +46,9 @@ class Gamma(_GammaBase):
         h = np.stack([[hmu, hmu_phi], [hmu_phi, hphi]])
         return f, g, h
 
+    def __repr__(self) -> str:
+        return f"gamma likelihood with mean ({self.mu_link}) and dispersion ({self.phi_link})"
+
 class GammaLog(_GammaBase):
     def __call__(
         self, 
@@ -69,6 +72,9 @@ class GammaLog(_GammaBase):
         hmu_phi = np.zeros_like(hmu)
         h = np.stack([[hmu, hmu_phi], [hmu_phi, hphi]])
         return f, g, h
+
+    def __repr__(self) -> str:
+        return "gamma likelihood with mean (log link) and dispersion (log link)"
 
 def gamma(mu_link: Link = log, phi_link: Link = log) -> Likelihood:
     if isinstance(mu_link, LogLink) and isinstance(phi_link, LogLink):
@@ -114,6 +120,9 @@ class GammaSS(_GammaSSBase):
         h = np.stack([[hk, hk_theta], [hk_theta, htheta]])
         return f, g, h
 
+    def __repr__(self) -> str:
+        return f"gamma likelihood with shape ({self.k_link}) and scale ({self.theta_link})"
+    
 class GammaSSLogScale(_GammaSSBase):
     def __init__(self, k_link: Link) -> None:
         self.k_link = k_link
@@ -140,6 +149,9 @@ class GammaSSLogScale(_GammaSSBase):
         hk_theta = dk
         h = np.stack([[hk, hk_theta], [hk_theta, htheta]])
         return f, g, h
+
+    def __repr__(self) -> str:
+        return f"gamma likelihood with shape ({self.k_link}) and scale (log link)"
 
 def gamma_ss(k_link: Link = log, theta_link: Link = log) -> Likelihood:
     if isinstance(theta_link, LogLink):

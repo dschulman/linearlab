@@ -44,12 +44,18 @@ class GLM:
                     H[i,j] = X[i].T @ (h[i,j][:,np.newaxis] * X[j])
             return f, np.concatenate(G), np.block(H.tolist())
         beta0 = np.zeros(p.sum())
-        f, beta = optim.newton_maxlik(_fgh, beta0, tol=tol, max_iter=max_iter) 
-        betas = {
-            param: pd.Series(b, index=Xi.columns)
-            for param, b, Xi in zip(self.lik.params(), np.split(beta, beta_splits), self.X)
+        beta, f, _, h = optim.newton_maxlik(_fgh, beta0, tol=tol, max_iter=max_iter)
+        stderr = np.sqrt(np.diag(np.linalg.inv(h)))
+        coefs = {
+            param: pd.DataFrame({"est": b, "se": se}, index = Xi.columns)
+            for param, b, se, Xi in zip(
+                self.lik.params(), 
+                np.split(beta, beta_splits), 
+                np.split(stderr, beta_splits), 
+                self.X
+            )
         }
-        return GLMFit(self, f + logZ, betas)
+        return GLMFit(self, f + logZ, coefs)
 
 glm = GLM.from_formula
 
@@ -57,8 +63,23 @@ glm = GLM.from_formula
 class GLMFit:
     model: GLM
     loglik: float
-    beta: dict[str, pd.Series]
+    coefs: dict[str, pd.DataFrame]
 
-    @property
-    def beta_grouped(self) -> pd.Series:
-        return pd.concat(self.beta)
+    def coef_table(self) -> pd.DataFrame:
+        return pd.concat(self.coefs)
+
+    def _repr_html_(self) -> str:
+        return (
+            "<div>" +
+            f"<p>GLM model with {self.model.lik}</p>" +
+            f"<p>Log-likelihood: {self.loglik:.2f}</p>" +
+            self.coef_table().to_html() +
+            "</div>"
+        )
+
+    def __repr__(self) -> str:
+        return (
+            f"GLM model with {self.model.lik}\n" +
+            f"Log-likelihood: {self.loglik:.6f}\n" +
+            str(self.coef_table())
+        )

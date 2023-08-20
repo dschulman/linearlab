@@ -44,6 +44,9 @@ class Binomial(_BinomialBase):
         h = (dp**2) * n / p / (1 - p)
         return f, g[np.newaxis,:], h[np.newaxis,np.newaxis,:]
 
+    def __repr__(self) -> str:
+        return f"binomial likelihood ({self.link})"
+
 class BinomialLogit(_BinomialBase):
     def __call__(
         self, 
@@ -60,6 +63,9 @@ class BinomialLogit(_BinomialBase):
         g = k - (n * p)
         h = n * p * (1 - p)
         return f, g[np.newaxis,:], h[np.newaxis,np.newaxis,:]
+
+    def __repr__(self) -> str:
+        return "binomial likelihood (logit link)"
 
 def binomial(link: Link = logit) -> Likelihood:
     if isinstance(link, LogitLink):
