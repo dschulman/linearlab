@@ -31,3 +31,17 @@ class Ridge(Regularization):
 
     def loglik_desc(self) -> str:
         return "Penalized "
+
+@dataclass(frozen = True)
+class Lasso(Regularization):
+    pen: float | Sequence[float]
+    pen_intercept: bool
+
+    def fit_desc(self) -> str:
+        pens = list(self.pen) if isinstance(self.pen, Sequence) else [self.pen]
+        pstr = ", ".join("{:.2e}".format(pen) for pen in pens)
+        istr = "; intercept penalized" if self.pen_intercept else ""
+        return f" with lasso regularization (penalty={pstr}{istr})"
+
+    def loglik_desc(self) -> str:
+        return "Penalized "
