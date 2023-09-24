@@ -66,7 +66,7 @@ class GLM:
         beta_splits = np.cumsum(p)[:-1]
         betas = np.split(beta, beta_splits)
         eta = np.vstack([Xi @ b for Xi, b in zip(X, betas)])
-        f, g, h = self.lik(y, eta)
+        f, g, h = self.lik.fgh(y, eta)
         G = [Xi.T @ gi for Xi, gi in zip(X, g)]
         H = np.empty((d,d), dtype=np.object_)
         for i in range(d):

@@ -7,11 +7,11 @@ from typing import Any
 from linearlab.lik.base import Likelihood
 from linearlab.link import Link, LogLink, log
 
-class _GammaBase(Likelihood):
+class _GammaBase(Likelihood[npt.NDArray[np.float64]]):
     def params(self) -> list[str]:
         return ["mu", "phi"]
 
-    def prepare_y(self, y: pd.Series | pd.DataFrame) -> tuple[Any, float]:
+    def prepare_y(self, y: pd.Series | pd.DataFrame) -> tuple[npt.NDArray[np.float64], float]:
         if not isinstance(y, pd.Series):
             raise ValueError("Gamma likelihood requires univariate y")
         y = y.to_numpy(dtype = np.float_)
@@ -26,8 +26,10 @@ class Gamma(_GammaBase):
     def __call__(
         self, 
         y: npt.NDArray[np.float64],
-        eta: npt.NDArray[np.float64]
-    ) -> tuple[float, npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+        eta: npt.NDArray[np.float64],
+        out_g: None | npt.NDArray[np.float64],
+        out_h: None | npt.NDArray[np.float64],
+    ) -> float:
         mu, dmu = self.mu_link.inv(eta[0])
         phi, dphi = self.phi_link.inv(eta[1])
         k = 1 / phi
@@ -37,14 +39,13 @@ class Gamma(_GammaBase):
             + special.xlogy(k-1, y)
             - (y / mu / phi)
         )
-        gmu = dmu * (y - mu) / mu**2 / phi
-        gphi = dphi * (special.digamma(k) + np.log(mu * phi / y) + ((y - mu) / mu)) / phi**2
-        g = np.stack([gmu, gphi])
-        hmu = dmu**2 / mu**2 / phi
-        hphi = dphi**2 * ((special.polygamma(1, k) / phi**4) - phi**(-3))
-        hmu_phi = np.zeros_like(hmu)
-        h = np.stack([[hmu, hmu_phi], [hmu_phi, hphi]])
-        return f, g, h
+        if out_g is not None:
+            out_g[0] = dmu * (y - mu) / mu**2 / phi
+            out_g[1] = dphi * (special.digamma(k) + np.log(mu * phi / y) + ((y - mu) / mu)) / phi**2
+        if out_h is not None:
+            out_h[0,0] = dmu**2 / mu**2 / phi
+            out_h[1,1] = dphi**2 * ((special.polygamma(1, k) / phi**4) - phi**(-3))
+        return f
 
     def __repr__(self) -> str:
         return f"gamma likelihood with mean ({self.mu_link}) and dispersion ({self.phi_link})"
@@ -53,8 +54,10 @@ class GammaLog(_GammaBase):
     def __call__(
         self, 
         y: npt.NDArray[np.float64],
-        eta: npt.NDArray[np.float64]
-    ) -> tuple[float, npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+        eta: npt.NDArray[np.float64],
+        out_g: None | npt.NDArray[np.float64],
+        out_h: None | npt.NDArray[np.float64],
+    ) -> float:
         mu = np.exp(eta[0])
         phi = np.exp(eta[1])
         k = 1 / phi
@@ -64,14 +67,13 @@ class GammaLog(_GammaBase):
             + special.xlogy(k-1, y)
             - (y / mu / phi)
         )
-        gmu = (y - mu) / mu / phi
-        gphi = (special.digamma(k) + np.log(mu * phi / y) + ((y - mu) / mu)) / phi
-        g = np.stack([gmu, gphi])
-        hmu = k
-        hphi = (special.polygamma(1, k) / phi**2) - k
-        hmu_phi = np.zeros_like(hmu)
-        h = np.stack([[hmu, hmu_phi], [hmu_phi, hphi]])
-        return f, g, h
+        if out_g is not None:
+            out_g[0] = (y - mu) / mu / phi
+            out_g[1] = (special.digamma(k) + np.log(mu * phi / y) + ((y - mu) / mu)) / phi
+        if out_h is not None:
+            out_h[0,0] = k
+            out_h[1,1] = (special.polygamma(1, k) / phi**2) - k
+        return f
 
     def __repr__(self) -> str:
         return "gamma likelihood with mean (log link) and dispersion (log link)"
@@ -82,11 +84,11 @@ def gamma(mu_link: Link = log, phi_link: Link = log) -> Likelihood:
     else:
         return Gamma(mu_link, phi_link)
 
-class _GammaSSBase(Likelihood):
+class _GammaSSBase(Likelihood[npt.NDArray[np.float64]]):
     def params(self) -> list[str]:
         return ["k", "theta"]
 
-    def prepare_y(self, y: pd.Series | pd.DataFrame) -> tuple[Any, float]:
+    def prepare_y(self, y: pd.Series | pd.DataFrame) -> tuple[npt.NDArray[np.float64], float]:
         if not isinstance(y, pd.Series):
             raise ValueError("Gamma likelihood requires univariate y")
         y = y.to_numpy(dtype = np.float_)
@@ -101,8 +103,10 @@ class GammaSS(_GammaSSBase):
     def __call__(
         self, 
         y: npt.NDArray[np.float64],
-        eta: npt.NDArray[np.float64]
-    ) -> tuple[float, npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+        eta: npt.NDArray[np.float64],
+        out_g: None | npt.NDArray[np.float64],
+        out_h: None | npt.NDArray[np.float64],
+    ) -> float:
         k, dk = self.k_link.inv(eta[0])
         theta, dtheta = self.theta_link.inv(eta[1])
         f = np.sum(
@@ -111,14 +115,14 @@ class GammaSS(_GammaSSBase):
             + special.xlogy(k - 1, y)
             - (y / theta)
         )
-        gk = dk * (-special.digamma(k) - np.log(theta) + np.log(y))
-        gtheta = dtheta * (y - (k * theta)) / theta**2
-        g = np.stack([gk, gtheta])
-        hk = dk**2 * special.polygamma(1, k)
-        htheta = dtheta**2 * k / theta**2
-        hk_theta = dk * dtheta / theta
-        h = np.stack([[hk, hk_theta], [hk_theta, htheta]])
-        return f, g, h
+        if out_g is not None:
+            out_g[0] = dk * (-special.digamma(k) - np.log(theta) + np.log(y))
+            out_g[1] = dtheta * (y - (k * theta)) / theta**2
+        if out_h is not None:
+            out_h[0,0] = dk**2 * special.polygamma(1, k)
+            out_h[1,1] = dtheta**2 * k / theta**2
+            out_h[0,1] = out_h[1,0] = dk * dtheta / theta
+        return f
 
     def __repr__(self) -> str:
         return f"gamma likelihood with shape ({self.k_link}) and scale ({self.theta_link})"
@@ -130,8 +134,10 @@ class GammaSSLogScale(_GammaSSBase):
     def __call__(
         self, 
         y: npt.NDArray[np.float64],
-        eta: npt.NDArray[np.float64]
-    ) -> tuple[float, npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+        eta: npt.NDArray[np.float64],
+        out_g: None | npt.NDArray[np.float64],
+        out_h: None | npt.NDArray[np.float64],
+    ) -> float:
         k, dk = self.k_link.inv(eta[0])
         log_theta = eta[1]
         theta = np.exp(eta[1])
@@ -141,14 +147,14 @@ class GammaSSLogScale(_GammaSSBase):
             + special.xlogy(k - 1, y)
             - (y / theta)
         )
-        gk = dk * (-special.digamma(k) - log_theta + np.log(y))
-        gtheta = (y - (k * theta)) / theta
-        g = np.stack([gk, gtheta])
-        hk = dk**2 * special.polygamma(1, k)
-        htheta = k
-        hk_theta = dk
-        h = np.stack([[hk, hk_theta], [hk_theta, htheta]])
-        return f, g, h
+        if out_g is not None:
+            out_g[0] = dk * (-special.digamma(k) - log_theta + np.log(y))
+            out_g[1] = (y - (k * theta)) / theta
+        if out_h is not None:
+            out_h[0,0] = dk**2 * special.polygamma(1, k)
+            out_h[1,1] = k
+            out_h[0,1] = out_h[1,0] = dk
+        return f
 
     def __repr__(self) -> str:
         return f"gamma likelihood with shape ({self.k_link}) and scale (log link)"

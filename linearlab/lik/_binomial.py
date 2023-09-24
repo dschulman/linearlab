@@ -7,11 +7,11 @@ from typing import Any
 from linearlab.lik.base import Likelihood
 from linearlab.link import Link, LogitLink, logit
 
-class _BinomialBase(Likelihood):
+class _BinomialBase(Likelihood[npt.NDArray[np.int_]]):
     def params(self) -> list[str]:
         return ["p"]
 
-    def prepare_y(self, y: pd.Series | pd.DataFrame) -> tuple[Any, float]:
+    def prepare_y(self, y: pd.Series | pd.DataFrame) -> tuple[tuple[npt.NDArray[np.int_], npt.NDArray[np.int_]], float]:
         if isinstance(y, pd.Series):
             k = y.to_numpy(dtype=np.bool_).astype(np.int_)
             n = np.ones(y.shape[0], dtype=np.int_)
@@ -32,17 +32,21 @@ class Binomial(_BinomialBase):
     def __call__(
         self, 
         y: tuple[npt.NDArray[np.int_], npt.NDArray[np.int_]],
-        eta: npt.NDArray[np.float64]
-    ) -> tuple[float, npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+        eta: npt.NDArray[np.float64],
+        out_g: None | npt.NDArray[np.float64],
+        out_h: None | npt.NDArray[np.float64],
+    ) -> float:
         k, n = y
         p, dp = self.link.inv(eta[0])
         f = np.sum(
             (k * special.logit(p)) +
             (n * special.log1p(-p))
         )
-        g = dp * (k - (n * p)) / p / (1 - p)
-        h = (dp**2) * n / p / (1 - p)
-        return f, g[np.newaxis,:], h[np.newaxis,np.newaxis,:]
+        if out_g is not None:
+            out_g[0] = dp * (k - (n * p)) / p / (1 - p)
+        if out_h is not None:
+            out_h[0,0] = (dp**2) * n / p / (1 - p)
+        return f
 
     def __repr__(self) -> str:
         return f"binomial likelihood ({self.link})"
@@ -51,8 +55,10 @@ class BinomialLogit(_BinomialBase):
     def __call__(
         self, 
         y: tuple[npt.NDArray[np.int_], npt.NDArray[np.int_]],
-        eta: npt.NDArray[np.float64]
-    ) -> tuple[float, npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+        eta: npt.NDArray[np.float64],
+        out_g: None | npt.NDArray[np.float64],
+        out_h: None | npt.NDArray[np.float64],
+    ) -> float:
         k, n = y
         eta = eta[0]
         p = special.expit(eta)
@@ -60,9 +66,11 @@ class BinomialLogit(_BinomialBase):
             (k * eta) +
             (n * special.log_expit(-eta))
         )
-        g = k - (n * p)
-        h = n * p * (1 - p)
-        return f, g[np.newaxis,:], h[np.newaxis,np.newaxis,:]
+        if out_g is not None:
+            out_g[0] = k - (n * p)
+        if out_h is not None:
+            out_h[0,0] = n * p * (1 - p)
+        return f
 
     def __repr__(self) -> str:
         return "binomial likelihood (logit link)"
